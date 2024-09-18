@@ -1,6 +1,6 @@
 {
-  "name": "unity-ci-self-hosted",
-  "description": "Unity CI Self Hosted",
+  "name": "unity-ci-self-hosted-tester",
+  "description": "Unity CI Self Hosted Tester",
   "version": "0.1.0",
   "author": "Marco Selleri <marco.selleri96@gmail.com>",
   "keywords": [

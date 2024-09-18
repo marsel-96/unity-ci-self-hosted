@@ -1,8 +1,8 @@
-# Unity CI Self Hosted
+# Unity CI Self Hosted Tester
 
 # Package
 ```
-npm run package'
+npm run package
 ```
 
 # Test Script Locally
