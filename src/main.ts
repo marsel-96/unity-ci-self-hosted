@@ -1,5 +1,10 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
+import { runCommand } from "unity-ci-self-hosted-common";
+import { logLines } from "unity-ci-self-hosted-common";
+import { join, isAbsolute } from 'path'
+
+import { variables } from './input'
+
 
 /**
  * The main function for the action.
@@ -7,20 +12,63 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    
+    let arifactsFullpath = isAbsolute(variables.unityArtifactsPath.value) ? 
+      variables.unityArtifactsPath.value : 
+      join(variables.GITHUB_WORKSPACE.value, variables.unityArtifactsPath.value)
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    let platforms = variables.unityTestMode.value.toLowerCase() === "all" ? ["EditMode", "PlayMode"] : [variables.unityTestMode.value]
+    for (let platform of platforms) {
+      let testResultsFile = join(arifactsFullpath,`${variables.unityTestMode.value}-results.xml`)
+      let command = variables.UNITY_PATH.value
+      let args = [
+        "-quit",
+        "-batchmode",
+        "-nographics",
+        "-projectPath " + variables.unityProjectPath.value,
+        "-runTests",
+        "-testPlatform " + platform,
+        "-testResults " + testResultsFile,
+        "-logFile -",
+      ]
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+      if (variables.unityCustomArguments.value) {
+        args.push(variables.unityCustomArguments.value)
+      }
+      
+      let exitCode = await runCommand(command, args)
+        .catch((error) => {
+          throw new Error(`\n\nException while running unity command. ${error}`);
+        })
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+      if (exitCode === 0) {
+        logLines(
+          '',
+          '',
+          `Test Run for platform ${platform} Succeeded!`,
+          '',
+          '###########################',
+          '#     Artifact output     #',
+          '###########################',
+          '',
+          `Test results: ${testResultsFile}`
+        )
+      } else {
+        throw new Error(`Test Run with mode ${platform} Failed! Exit Code ${exitCode}`);
+      }
+    }
+    
+    logLines(
+      '',
+      'All Test Runs Succeeded!',
+      ''
+    )
+
   } catch (error) {
-    // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    if (error instanceof Error) {
+      console.error("\n" + error.message)
+      core.setFailed("Error during test run")
+    }
+    else core.setFailed("An unexpected error occurred")
   }
 }
