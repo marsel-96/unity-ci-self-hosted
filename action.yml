@@ -17,8 +17,8 @@ inputs:
     required: false
     description: 'Extra arguments to include in Unity editor run.'
   unityTestMode:
-    required: false
-    default: 'editmode;playmode'
+    required: true
+    default: 'editmode'
     description: 'The type of tests to be run by the test runner. Allowed values are "EditMode", "PlayMode", or "All"'
   unityArtifactsPath:
     required: false
