@@ -25,10 +25,10 @@ export async function run(): Promise<void> {
         "-quit",
         "-batchmode",
         "-nographics",
-        "-projectPath " + variables.unityProjectPath.value,
+        "-projectPath", variables.unityProjectPath.value,
         "-runTests",
-        "-testPlatform " + platform,
-        "-testResults " + testResultsFile,
+        "-testPlatform", platform,
+        "-testResults", testResultsFile,
         "-logFile -",
       ]
 

@@ -25134,10 +25134,10 @@ async function run() {
                 "-quit",
                 "-batchmode",
                 "-nographics",
-                "-projectPath " + input_1.variables.unityProjectPath.value,
+                "-projectPath", input_1.variables.unityProjectPath.value,
                 "-runTests",
-                "-testPlatform " + platform,
-                "-testResults " + testResultsFile,
+                "-testPlatform", platform,
+                "-testResults", testResultsFile,
                 "-logFile -",
             ];
             if (input_1.variables.unityCustomArguments.value) {
