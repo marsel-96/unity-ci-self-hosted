@@ -1,10 +1,9 @@
 import * as core from '@actions/core'
+import * as logging from "unity-ci-self-hosted-common/dist";
 import { runCommand } from "unity-ci-self-hosted-common";
 import { logLines } from "unity-ci-self-hosted-common";
-import { join, isAbsolute } from 'path'
-
+import { join } from 'path'
 import { variables } from './input'
-
 
 /**
  * The main function for the action.
@@ -13,11 +12,14 @@ import { variables } from './input'
 export async function run(): Promise<void> {
   try {
     
-    let arifactsFullpath = isAbsolute(variables.unityArtifactsPath.value) ? 
-      variables.unityArtifactsPath.value : 
-      join(variables.GITHUB_WORKSPACE.value, variables.unityArtifactsPath.value)
+    console.log(`--------------------------------------------------------------------`)
+    logging.logWithStyle('Starting Unity Test', logging.ForegroundColor.Cyan)
+    console.log(`--------------------------------------------------------------------`)
 
-    let platforms = variables.unityTestMode.value.toLowerCase() === "all" ? ["EditMode", "PlayMode"] : [variables.unityTestMode.value]
+    const arifactsFullpath = variables.unityArtifactsPath.value
+    const platforms = variables.unityTestMode.value.toLowerCase() === "all" 
+            ? ["EditMode", "PlayMode"] : [variables.unityTestMode.value]
+
     for (let platform of platforms) {
       let testResultsFile = join(arifactsFullpath,`${variables.unityTestMode.value}-results.xml`)
       let command = variables.UNITY_PATH.value
@@ -36,39 +38,38 @@ export async function run(): Promise<void> {
         args.push(variables.unityCustomArguments.value)
       }
       
-      let exitCode = await runCommand(command, args)
-        .catch((error) => {
-          throw new Error(`\n\nException while running unity command. ${error}`);
-        })
+      let exitCode
+
+      try {
+        core.startGroup('Running Unity Command')
+        exitCode = await runCommand(command, args)
+        core.endGroup()
+      } catch(error){
+        core.endGroup()
+        throw new Error('Exception while running unity command', {cause: error});
+      }
 
       if (exitCode === 0) {
-        logLines(
-          '',
-          '',
-          `Test Run for platform ${platform} Succeeded!`,
-          '',
-          '###########################',
-          '#     Artifact output     #',
-          '###########################',
-          '',
-          `Test results: ${testResultsFile}`
-        )
+          console.log('--------------------------------------------------------------------')
+          logging.logWithStyle('Build Succeeded!', logging.ForegroundColor.Green)
+          console.log('--------------------------------------------------------------------')
+          console.log('')
+          logging.logWithStyle(`Test results: ${testResultsFile}`, logging.ForegroundColor.Green)
       } else {
         throw new Error(`Test Run with mode ${platform} Failed! Exit Code ${exitCode}`);
       }
     }
     
-    logLines(
-      '',
-      'All Test Runs Succeeded!',
-      ''
-    )
+    console.log('')
+    logging.logWithStyle('All Test Runs Succeeded!', logging.ForegroundColor.Green)
+    console.log('')
 
   } catch (error) {
     if (error instanceof Error) {
-      console.error("\n" + error.message)
-      core.setFailed("Error during test run")
+      core.error(error)
     }
-    else core.setFailed("An unexpected error occurred")
+    else core.error("An unexpected error occurred")
+
+    core.setFailed("Error during build run")
   }
 }
